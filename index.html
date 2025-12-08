@@ -37,6 +37,36 @@
   let fullData = [];
   let sheetList = [];
 
+  // FIX: ensure month dropdown loads AFTER workbook is parsed correctly
+  async function loadSheetList() {
+    try {
+      const res = await fetch(sheetURL);
+      if (!res.ok) {
+        setStatus("Failed to load sheet list. Spreadsheet must be public.");
+        return;
+      }
+
+      const array = await res.arrayBuffer();
+      const wb = XLSX.read(array, { type: "array" });
+
+      sheetList = wb.SheetNames;
+
+      console.log("Sheets detected:", sheetList);
+
+      const sel = document.getElementById("monthSelect");
+      sel.innerHTML = `<option value="">Select Month (Sheet)</option>`;
+
+      sheetList.forEach(name => {
+        sel.innerHTML += `<option value="${name}">${name}</option>`;
+      });
+
+      setStatus("Select a month to continue.");
+    } catch (err) {
+      console.error(err);
+      setStatus("Error loading sheets — ensure the Google Sheet is shared as PUBLIC.");
+    }
+  } = [];
+
   document.addEventListener("DOMContentLoaded", () => {
     loadSheetList();
     // Rebind listeners safely after DOM load
@@ -56,7 +86,45 @@
     document.getElementById("status").innerText = msg;
   }
 
+  function // Modern improved table rendering
   function renderTable(rows) {
+    const table = document.getElementById("resultTable");
+    const thead = table.querySelector("thead");
+    const tbody = table.querySelector("tbody");
+
+    thead.innerHTML = "";
+    tbody.innerHTML = "";
+
+    if (!rows || rows.length === 0) {
+      table.classList.add("hidden");
+      return;
+    }
+
+    const headers = Object.keys(rows[0]);
+
+    thead.innerHTML = `
+      <tr class='bg-gray-100 text-left border-b shadow'>
+        ${headers.map(h => `<th class='p-3 font-semibold uppercase tracking-wide text-xs'>${h}</th>`).join("")}
+      </tr>
+    `;
+
+    tbody.innerHTML = rows
+      .map(
+        r => `
+        <tr class='hover:bg-blue-50 transition border-b'>
+          ${headers
+            .map(
+              h => `
+            <td class='p-3 text-sm text-gray-800'>${r[h] ?? ""}</td>
+          `
+            )
+            .join("")}
+        </tr>`
+      )
+      .join("");
+
+    table.classList.remove("hidden");
+  }(rows) {
     const table = document.getElementById("resultTable");
     const thead = table.querySelector("thead");
     const tbody = table.querySelector("tbody");
@@ -125,7 +193,10 @@
     if (q) {
       filterData();
     } else {
-      renderTable() {
+      renderTable([]);
+      setStatus(`Month "${month}" selected. Enter Login ID.`);
+    }
+  }() {
     const month = document.getElementById("monthSelect").value;
 
     if (!month) {
