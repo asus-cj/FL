@@ -39,7 +39,16 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     loadSheetList();
+    // Rebind listeners safely after DOM load
+  function bindEvents() {
     document.getElementById("search").addEventListener("input", filterData);
+    document.getElementById("monthSelect").addEventListener("change", onMonthChange);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadSheetList();
+    bindEvents();
+  });("search").addEventListener("input", filterData);
     document.getElementById("monthSelect").addEventListener("change", filterByMonth);
   });
 
@@ -61,10 +70,12 @@
     }
 
     const headers = Object.keys(rows[0]);
-    thead.innerHTML = `<tr>${headers.map(h => `<th class='p-2 border'>${h}</th>`).join("")}</tr>`;
-    tbody.innerHTML = rows.map(r => `<tr>${headers.map(h => `<td class='p-2 border'>${r[h] ?? ""}</td>`).join("")}</tr>`).join("");
+    thead.innerHTML = `<tr>${headers.map(h => `<th class='p-3 border bg-gray-50 sticky top-0 z-10 whitespace-nowrap shadow-sm'>${h}</th>`).join("")}</tr>`;
+
+    tbody.innerHTML = rows.map(r => `<tr class='hover:bg-gray-100 transition'>${headers.map(h => `<td class='p-3 border whitespace-nowrap'>${r[h] ?? ""}</td>`).join("")}</tr>`).join("");
 
     table.classList.remove("hidden");
+  }("hidden");
   }
 
   async function loadSheetList() {
@@ -99,7 +110,22 @@
     fullData = XLSX.utils.sheet_to_json(sheet);
   }
 
-  async function filterByMonth() {
+  async function onMonthChange() {
+    const month = document.getElementById("monthSelect").value;
+    const q = document.getElementById("search").value.trim().toLowerCase();
+
+    if (!month) {
+      renderTable([]);
+      setStatus("Select a month first.");
+      return;
+    }
+
+    await loadExcel(month);
+
+    if (q) {
+      filterData();
+    } else {
+      renderTable() {
     const month = document.getElementById("monthSelect").value;
 
     if (!month) {
@@ -136,7 +162,28 @@
     if (!loginKey) {
       setStatus("Login ID column not found.");
       return;
-    }() {
+    }
+
+    const filtered = fullData.filter(r => String(r[loginKey]).toLowerCase() === q);
+    renderTable(filtered);
+    setStatus(`Showing ${filtered.length} result(s).`);
+  }
+
+  document.getElementById("monthSelect")?.addEventListener("change", async () => {
+    const month = document.getElementById("monthSelect").value;
+    const q = document.getElementById("search").value.trim().toLowerCase();
+
+    if (!month) return;
+
+    await loadExcel(month);
+
+    if (q) {
+      filterData();
+    } else {
+      renderTable([]);
+      setStatus(`Month "${month}" selected. Enter Login ID.`);
+    }
+  });() {
     const q = document.getElementById("search").value.trim().toLowerCase();
     const month = document.getElementById("monthSelect").value;
 
