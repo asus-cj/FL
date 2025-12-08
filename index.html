@@ -52,12 +52,29 @@
   }
 
   function filterData() {
-    const q = document.getElementById("search").value.toLowerCase();
-    const filtered = fullData.filter(r =>
-      Object.values(r).some(v => String(v).toLowerCase().includes(q))
-    );
+    const q = document.getElementById("search").value.trim().toLowerCase();
+    if (!q) {
+      // If empty input → show nothing
+      renderTable([]);
+      setStatus("Please enter a Login ID.");
+      return;
+    }
+
+    // Identify Login ID column by exact header match (case-insensitive)
+    const loginKey = Object.keys(fullData[0]).find(h => h.toLowerCase() === "login id" || h.toLowerCase() === "loginid");
+
+    if (!loginKey) {
+      setStatus("Error: No Login ID column found.");
+      renderTable([]);
+      return;
+    }
+
+    const filtered = fullData.filter(r => String(r[loginKey]).toLowerCase() === q);
     renderTable(filtered);
-    setStatus("Showing " + filtered.length + " of " + fullData.length + " rows.");
+    setStatus("Showing " + filtered.length + " matched Login ID result(s).");
+  }
+
+  function setStatus(msg) {("Showing " + filtered.length + " of " + fullData.length + " rows.");
   }
 
   function renderTable(rows) {
