@@ -1,247 +1,98 @@
-import React, { useEffect, useState, useRef } from "react";
+<!-- Simple HTML + JS version for GitHub Pages: index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Login ID</title>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">Search Data by Login ID</h1>
+    <p class="text-gray-600 mb-4">This page loads <strong>data.xlsx</strong> from the root of your GitHub repo.</p>
 
-// Single-file React component (default export).
-// Usage:
-// - Host this file on GitHub Pages or any static host in the same repo as `data.xlsx` (root).
-// - The app will try to fetch `/data.xlsx` automatically. If fetch fails (CORS or wrong path),
-//   paste the raw file URL into the input or upload the file with the "Upload .xlsx" button.
-// Libraries used (loaded dynamically at runtime): SheetJS (xlsx)
-
-export default function ExcelSearchLoginID() {
-  const [data, setData] = useState([]);
-  const [headers, setHeaders] = useState([]);
-  const [query, setQuery] = useState("");
-  const [filtered, setFiltered] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [rawUrl, setRawUrl] = useState("");
-  const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    // Try automatic fetch of /data.xlsx when the page loads
-    // Good when you host this on the same repo root (GitHub Pages or same domain)
-    loadFromRelativePath();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    // filter by login ID whenever data or query changes
-    if (!query) {
-      setFiltered(data);
-      return;
-    }
-    const q = query.toLowerCase();
-    const results = data.filter((row) => {
-      // find a column that looks like a login id (case-insensitive search across all cells)
-      // but primarily check if any cell string contains the query
-      return Object.values(row).some((v) => {
-        if (v === null || v === undefined) return false;
-        return String(v).toLowerCase().includes(q);
-      });
-    });
-    setFiltered(results);
-  }, [data, query]);
-
-  async function loadFromRelativePath() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/data.xlsx");
-      if (!res.ok) throw new Error("No xlsx found at /data.xlsx (status " + res.status + ")");
-      const blob = await res.blob();
-      await parseExcelBlob(blob);
-    } catch (err) {
-      setError(
-        "Auto-load failed: " + err.message + ". If hosting on GitHub Pages, either place data.xlsx in the site root or paste the raw file URL below or upload the file."
-      );
-      setLoading(false);
-    }
-  }
-
-  async function parseExcelBlob(blob) {
-    setLoading(true);
-    setError("");
-    try {
-      // load SheetJS
-      if (!window.XLSX) {
-        await loadScript("https://unpkg.com/xlsx/dist/xlsx.full.min.js");
-      }
-      const arrayBuffer = await blob.arrayBuffer();
-      const wb = window.XLSX.read(arrayBuffer, { type: "array" });
-      const firstSheet = wb.SheetNames[0];
-      const sheet = wb.Sheets[firstSheet];
-      const json = window.XLSX.utils.sheet_to_json(sheet, { defval: null });
-      setData(json);
-      setFiltered(json);
-      setHeaders(json.length > 0 ? Object.keys(json[0]) : []);
-    } catch (err) {
-      setError("Failed to parse Excel file: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      const existing = document.querySelector(`script[src=\"${src}\"]`);
-      if (existing) {
-        existing.onload ? existing.onload() : resolve();
-        return;
-      }
-      const s = document.createElement("script");
-      s.src = src;
-      s.onload = () => resolve();
-      s.onerror = (e) => reject(new Error("Failed to load script: " + src));
-      document.head.appendChild(s);
-    });
-  }
-
-  async function handleLoadFromUrl() {
-    if (!rawUrl) {
-      setError("Please paste the raw URL to the data.xlsx file.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(rawUrl);
-      if (!res.ok) throw new Error("Failed to fetch file (status " + res.status + ")");
-      const blob = await res.blob();
-      await parseExcelBlob(blob);
-    } catch (err) {
-      setError("Load from URL failed: " + err.message);
-      setLoading(false);
-    }
-  }
-
-  function handleFileUpload(e) {
-    const f = e.target.files[0];
-    if (!f) return;
-    parseExcelBlob(f);
-  }
-
-  function clear() {
-    setData([]);
-    setHeaders([]);
-    setFiltered([]);
-    setQuery("");
-    setError("");
-  }
-
-  function downloadCSV() {
-    if (!data || data.length === 0) return;
-    // convert filtered rows to CSV
-    const keys = headers;
-    const rows = filtered.map((r) => keys.map((k) => (r[k] !== null && r[k] !== undefined ? String(r[k]).replace(/"/g, '""') : "")));
-    const csv = [keys.join(",")]
-      .concat(rows.map((r) => r.map((c) => `"${c}"`).join(",")))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "export.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-6">
-          <h1 className="text-3xl font-semibold mb-2">Excel → Search by Login ID</h1>
-          <p className="text-sm text-gray-600">Place <code>data.xlsx</code> in the site root or supply a raw file URL / upload a file. Type a Login ID (or partial) to filter.</p>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="col-span-2 flex gap-2">
-            <input
-              type="text"
-              placeholder="Search by Login ID (or any cell)..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 p-3 rounded-lg border border-gray-300 shadow-sm"
-            />
-            <button onClick={() => setQuery("")} className="px-4 py-2 bg-white border rounded-lg">Clear</button>
-            <button onClick={downloadCSV} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Download CSV</button>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Paste raw URL to data.xlsx (optional)"
-                value={rawUrl}
-                onChange={(e) => setRawUrl(e.target.value)}
-                className="flex-1 p-2 rounded-lg border border-gray-300"
-              />
-              <button onClick={handleLoadFromUrl} className="px-3 rounded-lg bg-green-600 text-white">Load</button>
-            </div>
-
-            <div className="flex gap-2">
-              <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
-              <button
-                onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                className="px-3 py-2 rounded-lg border"
-              >
-                Upload .xlsx
-              </button>
-
-              <button onClick={loadFromRelativePath} className="px-3 py-2 rounded-lg border">
-                Try /data.xlsx
-              </button>
-
-              <button onClick={clear} className="px-3 py-2 rounded-lg border">Reset</button>
-            </div>
-          </div>
-        </div>
-
-        <section>
-          {loading && <div className="p-4 bg-white rounded shadow-sm">Loading...</div>}
-          {error && <div className="p-4 bg-red-50 text-red-700 rounded mb-4">{error}</div>}
-
-          <div className="overflow-x-auto bg-white rounded-lg shadow">
-            <table className="min-w-full divide-y">
-              <thead className="bg-gray-100">
-                <tr>
-                  {headers.map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={Math.max(1, headers.length)} className="p-6 text-center text-gray-500">
-                      No data to show
-                    </td>
-                  </tr>
-                )}
-
-                {filtered.map((row, idx) => (
-                  <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    {headers.map((h) => (
-                      <td key={h} className="px-4 py-3 text-sm text-gray-800 align-top">
-                        {row[h] === null || row[h] === undefined ? "" : String(row[h])}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-4 text-sm text-gray-600">
-            Showing <strong>{filtered.length}</strong> of <strong>{data.length}</strong> rows.
-          </div>
-        </section>
-
-        <footer className="mt-8 text-xs text-gray-500">
-          Tip: If hosting on GitHub Pages, make sure data.xlsx is in your repository root and the Pages site root can access it. If you use the raw.githubusercontent URL, paste it above.
-        </footer>
-      </div>
+    <div class="flex gap-2 mb-4">
+      <input id="search" type="text" placeholder="Search Login ID..." class="flex-1 p-3 rounded border" />
+      <button onclick="clearSearch()" class="px-4 py-2 bg-white border rounded">Clear</button>
     </div>
-  );
-}
+
+    <div id="status" class="mb-4 text-sm text-gray-600"></div>
+
+    <div class="overflow-x-auto">
+      <table id="table" class="min-w-full bg-white rounded shadow divide-y"></table>
+    </div>
+  </div>
+
+<script>
+  let fullData = [];
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadExcel();
+    document.getElementById("search").addEventListener("input", filterData);
+  });
+
+  async function loadExcel() {
+    try {
+      setStatus("Loading data.xlsx...");
+      const res = await fetch("data.xlsx");
+      if (!res.ok) throw new Error("File not found. Place data.xlsx in root.");
+
+      const array = await res.arrayBuffer();
+      const wb = XLSX.read(array, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      fullData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      renderTable(fullData);
+      setStatus("Loaded " + fullData.length + " rows.");
+    } catch (e) {
+      setStatus("Error: " + e.message);
+    }
+  }
+
+  function filterData() {
+    const q = document.getElementById("search").value.toLowerCase();
+    const filtered = fullData.filter(r =>
+      Object.values(r).some(v => String(v).toLowerCase().includes(q))
+    );
+    renderTable(filtered);
+    setStatus("Showing " + filtered.length + " of " + fullData.length + " rows.");
+  }
+
+  function renderTable(rows) {
+    const table = document.getElementById("table");
+    table.innerHTML = "";
+    if (rows.length === 0) {
+      table.innerHTML = `<tr><td class='p-4 text-center text-gray-500'>No data found</td></tr>`;
+      return;
+    }
+
+    const headers = Object.keys(rows[0]);
+    let thead = `<thead class='bg-gray-200'><tr>`;
+    headers.forEach(h => thead += `<th class='px-4 py-2 text-left'>${h}</th>`);
+    thead += `</tr></thead>`;
+
+    let tbody = "<tbody>";
+    rows.forEach(r => {
+      tbody += `<tr class='border-t'>`;
+      headers.forEach(h => tbody += `<td class='px-4 py-2'>${r[h]}</td>`);
+      tbody += `</tr>`;
+    });
+    tbody += "</tbody>";
+
+    table.innerHTML = thead + tbody;
+  }
+
+  function clearSearch() {
+    document.getElementById("search").value = "";
+    renderTable(fullData);
+    setStatus("Showing all " + fullData.length + " rows.");
+  }
+
+  function setStatus(msg) {
+    document.getElementById("status").innerText = msg;
+  }
+</script>
+</body>
+</html>
