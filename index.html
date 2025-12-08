@@ -10,10 +10,10 @@
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-5xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">Masukkan ID iChannel Anda</h1>
-
+    <h1 class="text-3xl font-bold mb-4">Masukkan ID iChannel</h1>
+    
     <div class="flex gap-2 mb-4">
-      <input id="search" type="text" placeholder="Search Login ID..." class="flex-1 p-3 rounded border" />
+      <input id="search" type="text" placeholder="Cari ID iChannel" class="flex-1 p-3 rounded border" />
       <button onclick="clearSearch()" class="px-4 py-2 bg-white border rounded">Clear</button>
     </div>
 
@@ -43,8 +43,9 @@
       const sheet = wb.Sheets[wb.SheetNames[0]];
       fullData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-      renderTable(fullData);
-      setStatus("Loaded " + fullData.length + " rows.");
+      // Do not show data yet until user enters Login ID
+      renderTable([]);
+      setStatus("Data loaded. Please enter Login ID to display results.");
     } catch (e) {
       setStatus("Error: " + e.message);
     }
