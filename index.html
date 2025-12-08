@@ -83,7 +83,7 @@
       setStatus("Select a month.");
     } catch (err) {
       console.error(err);
-      setStatus("Failed to load sheet list.");
+      setStatus("Failed to load database.");
     }
   }
 
@@ -105,13 +105,13 @@
 
     if (!month) {
       renderTable([]);
-      setStatus("Select a month to continue.");
+      setStatus("Pilih bulan untuk melanjutkan");
       return;
     }
 
     await loadExcel(month);
     renderTable([]);
-    setStatus(`Month "${month}" selected. Now enter a Login ID.`);
+    setStatus(`Bulan "${month}" dipilih. Silahkan masukkan ID iChannel.`);
   }
 
   function filterData() {
@@ -120,24 +120,24 @@
 
     if (!month) {
       renderTable([]);
-      setStatus("Select a month first.");
+      setStatus("Silahkan pilih bulan terlebih dahulu.");
       return;
     }
 
     if (!q) {
       renderTable([]);
-      setStatus("Enter a Login ID to search.");
+      setStatus("Nasukkan ID iChannel.");
       return;
     }
 
     if (!fullData.length) {
-      setStatus("No data loaded.");
+      setStatus("Data tidak tersedia.");
       return;
     }
 
     const loginKey = Object.keys(fullData[0]).find(h => h.toLowerCase() === "login id" || h.toLowerCase() === "loginid");
     if (!loginKey) {
-      setStatus("Login ID column not found.");
+      setStatus("ID iChannel tidak ditemukan.");
       return;
     }
 
