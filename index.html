@@ -10,10 +10,11 @@
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-5xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">Masukkan ID iChannel</h1>
-    
+    <h1 class="text-3xl font-bold mb-4">Search Data by Login ID</h1>
+    <p class="text-gray-600 mb-4">This page loads <strong>data.xlsx</strong> from the root of your GitHub repo.</p>
+
     <div class="flex gap-2 mb-4">
-      <input id="search" type="text" placeholder="Cari ID iChannel" class="flex-1 p-3 rounded border" />
+      <input id="search" type="text" placeholder="Search Login ID..." class="flex-1 p-3 rounded border" />
       <button onclick="clearSearch()" class="px-4 py-2 bg-white border rounded">Clear</button>
     </div>
 
@@ -35,7 +36,7 @@
   async function loadExcel() {
     try {
       setStatus("Loading data.xlsx...");
-      const res = await fetch("data.xlsx");
+      const res = await fetch("https://docs.google.com/spreadsheets/d/FILE_ID/export?format=xlsx");
       if (!res.ok) throw new Error("File not found. Place data.xlsx in root.");
 
       const array = await res.arrayBuffer();
@@ -45,7 +46,7 @@
 
       // Do not show data yet until user enters Login ID
       renderTable([]);
-      setStatus("Data loaded. Please enter Login ID to display results.");
+      setStatus("Google Sheet loaded. Please enter Login ID to display results.");
     } catch (e) {
       setStatus("Error: " + e.message);
     }
