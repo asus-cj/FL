@@ -37,7 +37,7 @@
     try {
       setStatus("Loading data.xlsx...");
       const res = await fetch("https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx");
-      if (!res.ok) throw new Error("File not found. Place data.xlsx in root.");
+      if (!res.ok) throw new Error("Database not found");
 
       const array = await res.arrayBuffer();
       const wb = XLSX.read(array, { type: "array" });
