@@ -129,6 +129,29 @@
       return;
     }
 
+    const loginKey = fullData.length
+      ? Object.keys(fullData[0]).find(h => h.toLowerCase() === "login id" || h.toLowerCase() === "loginid")
+      : null;
+
+    if (!loginKey) {
+      setStatus("Login ID column not found.");
+      return;
+    }() {
+    const q = document.getElementById("search").value.trim().toLowerCase();
+    const month = document.getElementById("monthSelect").value;
+
+    if (!month) {
+      renderTable([]);
+      setStatus("Select a month first.");
+      return;
+    }
+
+    if (!q) {
+      renderTable([]);
+      setStatus("Enter a Login ID to search.");
+      return;
+    }
+
     if (!fullData.length) {
       setStatus("No data loaded.");
       return;
