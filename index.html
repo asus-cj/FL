@@ -45,7 +45,7 @@
 
   async async function loadSheetList() {
     try {
-      const metaUrl = "https://docs.google.com/spreadsheets/d/FILE_ID/export?format=xlsx";
+      const metaUrl = "https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx";
       const res = await fetch(metaUrl);
       const array = await res.arrayBuffer();
       const wb = XLSX.read(array, { type: "array" });
