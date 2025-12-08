@@ -21,7 +21,7 @@
       </select>
 
       <input id="search" type="text" placeholder="Masukkan ID iChannel, contoh: ID2512A000" class="p-3 border rounded w-2/3" />
-      <button id="searchBtn" class="p-3 bg-blue-600 text-white rounded">Search</button>
+      <button id="searchBtn" class="p-3 bg-blue-600 text-white rounded">Cari</button>
     </div>
 
     <!-- Status -->
@@ -83,7 +83,7 @@
         sel.innerHTML += `<option value="${name}">${name}</option>`;
       });
 
-      setStatus("Select a month.");
+      setStatus("Pilih bulan.");
     } catch (err) {
       console.error(err);
       setStatus("Failed to load database.");
