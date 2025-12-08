@@ -10,11 +10,14 @@
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-5xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">Pencarian data pencapaian 1-30 November 2025</h1>
-    <p class="text-gray-600 mb-4">Masukkan ID iChannel Anda Untuk Pencarian Data</p>
+    <h1 class="text-3xl font-bold mb-4">Search Data by Login ID or Month</h1>Search Data by Login ID</h1>
+    <p class="text-gray-600 mb-4">This page loads <strong>data.xlsx</strong> from the root of your GitHub repo.</p>
 
     <div class="flex gap-2 mb-4">
-      <input id="search" type="text" placeholder="Masukkan ID iChannel, contoh : ID2512A000" class="flex-1 p-3 rounded border" />
+      <select id="monthSelect" class="p-3 rounded border bg-white">
+        <option value="">Select Month (Sheet)</option>
+      </select>
+      <input id="search" type="text" placeholder="Search Login ID..." class="flex-1 p-3 rounded border" />
       <button onclick="clearSearch()" class="px-4 py-2 bg-white border rounded">Clear</button>
     </div>
 
@@ -28,31 +31,94 @@
 <script>
   let fullData = [];
 
+  let sheetList = [];
+
   document.addEventListener("DOMContentLoaded", () => {
+    loadSheetList(); // NEW: load all sheet names as month options
+    loadExcel();
+    document.getElementById("search").addEventListener("input", filterData);
+    document.getElementById("monthSelect").addEventListener("change", filterByMonth);
+  });("DOMContentLoaded", () => {
     loadExcel();
     document.getElementById("search").addEventListener("input", filterData);
   });
 
-  async function loadExcel() {
+  async async function loadSheetList() {
+    try {
+      const metaUrl = "https://docs.google.com/spreadsheets/d/FILE_ID/export?format=xlsx";
+      const res = await fetch(metaUrl);
+      const array = await res.arrayBuffer();
+      const wb = XLSX.read(array, { type: "array" });
+      sheetList = wb.SheetNames;
+
+      const sel = document.getElementById("monthSelect");
+      sheetList.forEach(s => {
+        sel.innerHTML += `<option value="${s}">${s}</option>`;
+      });
+
+    } catch (e) {
+      console.error("Failed to load sheet list", e);
+    }
+  }
+
+  async function loadExcel(sheetName = null) {() {
     try {
       setStatus("Loading data.xlsx...");
-      const res = await fetch("https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx");
-      if (!res.ok) throw new Error("Database not found");
+      const res = await fetch("https://docs.google.com/spreadsheets/d/FILE_ID/export?format=xlsx");
+      if (!res.ok) throw new Error("File not found. Place data.xlsx in root.");
 
       const array = await res.arrayBuffer();
       const wb = XLSX.read(array, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const targetSheet = sheetName && wb.SheetNames.includes(sheetName)
+        ? sheetName
+        : wb.SheetNames[0];
+      const sheet = wb.Sheets[targetSheet];[wb.SheetNames[0]];
       fullData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
       // Do not show data yet until user enters Login ID
       renderTable([]);
-      setStatus("Database loaded. Please enter Login ID to display results.");
+      setStatus("Google Sheet loaded. Please enter Login ID to display results.");
     } catch (e) {
       setStatus("Error: " + e.message);
     }
   }
 
   function filterData() {
+    const q = document.getElementById("search").value.trim().toLowerCase();
+    const month = document.getElementById("monthSelect").value;
+
+    if (month) return filterByMonth();
+
+    if (!q) {
+      renderTable([]);
+      setStatus("Enter Login ID.");
+      return;
+    }
+
+    const loginKey = Object.keys(fullData[0]).find(h => h.toLowerCase() === "login id" || h.toLowerCase() === "loginid");
+    if (!loginKey) {
+      setStatus("Login ID column missing.");
+      renderTable([]);
+      return;
+    }
+
+    const filtered = fullData.filter(r => String(r[loginKey]).toLowerCase() === q);
+    renderTable(filtered);
+    setStatus("Showing " + filtered.length + " matched result(s).");
+  }
+
+  async function filterByMonth() {
+    const month = document.getElementById("monthSelect").value;
+    if (!month) {
+      renderTable([]);
+      setStatus("Select a month to display.");
+      return;
+    }
+
+    await loadExcel(month);
+    renderTable(fullData);
+    setStatus("Loaded sheet: " + month + " (" + fullData.length + " rows)");
+  }() {
     const q = document.getElementById("search").value.trim().toLowerCase();
     if (!q) {
       // If empty input → show nothing
