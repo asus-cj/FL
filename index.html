@@ -64,7 +64,7 @@
   async function loadExcel(sheetName = null) {() {
     try {
       setStatus("Loading data.xlsx...");
-      const res = await fetch("https://docs.google.com/spreadsheets/d/FILE_ID/export?format=xlsx");
+      const res = await fetch("https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx");
       if (!res.ok) throw new Error("File not found. Place data.xlsx in root.");
 
       const array = await res.arrayBuffer();
