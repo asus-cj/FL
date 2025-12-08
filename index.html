@@ -1,48 +1,151 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Excel ID Search</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <style>
-      body { font-family: system-ui, Arial; max-width: 900px; margin: 24px auto; padding: 0 12px; }
-      input, button { padding: 8px; font-size: 1rem; }
-      table { border-collapse: collapse; width: 100%; margin-top: 16px; }
-      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-      th { background: #f0f0f0; }
-      .row { margin-top: 12px; }
-    </style>
-  </head>
-  <body>
-    <h1>Search Excel by ID</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login ID Lookup</title>
 
-    <p>
-      You can either:
-      <ol>
-        <li>Place an Excel file named <code>data.xlsx</code> inside a <code>data</code> folder in the project root, or</li>
-        <li>Upload an .xlsx file using the upload form below (it will be saved server-side as <code>data/data.xlsx</code>).</li>
-      </ol>
-    </p>
+  <!-- React + XLSX + Tailwind -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 
-    <div class="row">
-      <form id="uploadForm">
-        <label>Upload Excel (.xlsx) file:
-          <input type="file" id="fileInput" name="file" accept=".xlsx" />
-        </label>
-        <button type="submit">Upload</button>
-        <span id="uploadStatus"></span>
-      </form>
-    </div>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
 
-    <div class="row">
-      <label>Search by ID:
-        <input type="text" id="idInput" placeholder="Enter ID to search" />
-      </label>
-      <button id="searchBtn">Search</button>
-    </div>
+<body class="bg-gray-100 p-6">
+  <div id="root"></div>
 
-    <div id="results"></div>
+  <script type="text/babel">
 
-    <script src="/main.js"></script>
-  </body>
+    function App() {
+      const [data, setData] = React.useState([]);
+      const [searchId, setSearchId] = React.useState("");
+      const [result, setResult] = React.useState(null);
+      const [loading, setLoading] = React.useState(true);
+
+      // Load data.xlsx directly from GitHub root
+      React.useEffect(() => {
+        fetch("data.xlsx")
+          .then(res => res.arrayBuffer())
+          .then(buffer => {
+            const workbook = XLSX.read(buffer, { type: "array" });
+            const sheet = workbook.Sheets["Tracker Upload 25-11"];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+            setData(jsonData);
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error("Failed loading Excel:", err);
+            setLoading(false);
+          });
+      }, []);
+
+      const handleSearch = () => {
+        const match = data.find(row => String(row["Login ID"]) === searchId);
+        setResult(match || "NOT_FOUND");
+      };
+
+      if (loading) {
+        return <p className="text-center text-lg">Loading database...</p>;
+      }
+
+      return (
+        <div className="max-w-4xl mx-auto bg-white shadow p-6 rounded-lg space-y-6">
+          <h1 className="text-2xl font-bold">Login ID Lookup</h1>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Enter Login ID"
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+              className="border p-2 flex-1 rounded"
+            />
+            <button
+              onClick={handleSearch}
+              className="p-2 rounded bg-blue-600 text-white"
+            >
+              Search
+            </button>
+          </div>
+
+          {result === "NOT_FOUND" && (
+            <p className="text-red-500 font-semibold">No data found.</p>
+          )}
+
+          {result && result !== "NOT_FOUND" && (
+            <div className="space-y-6">
+
+              {/* Summary Table */}
+              <h2 className="text-xl font-semibold">Summary</h2>
+              <table className="min-w-full text-sm border">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="border p-2">INVALID (BV)</th>
+                    <th className="border p-2">VALID (BW)</th>
+                    <th className="border p-2">TOTAL (BX)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border p-2">{result["BV"]}</td>
+                    <td className="border p-2">{result["BW"]}</td>
+                    <td className="border p-2">{result["BX"]}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Valid Points Table */}
+              <h3 className="font-semibold">Valid Points (BY → CB)</h3>
+              <table className="min-w-full text-sm border">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="border p-2">BY</th>
+                    <th className="border p-2">BZ</th>
+                    <th className="border p-2">CA</th>
+                    <th className="border p-2">CB</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border p-2">{result["BY"]}</td>
+                    <td className="border p-2">{result["BZ"]}</td>
+                    <td className="border p-2">{result["CA"]}</td>
+                    <td className="border p-2">{result["CB"]}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3 className="font-semibold">Incentive Estimation (CG → CJ)</h3>
+              <table className="min-w-full text-sm border">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="border p-2">CG</th>
+                    <th className="border p-2">CH</th>
+                    <th className="border p-2">CI</th>
+                    <th className="border p-2">CJ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border p-2">{result["CG"]}</td>
+                    <td className="border p-2">{result["CH"]}</td>
+                    <td className="border p-2">{result["CI"]}</td>
+                    <td className="border p-2">{result["CJ"]}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
 </html>
