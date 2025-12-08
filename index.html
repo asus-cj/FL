@@ -17,7 +17,7 @@
       <select id="monthSelect" class="p-3 rounded border bg-white">
         <option value="">Pilih bulan</option>
       </select>
-      <input id="search" type="text" placeholder="Search Login ID..." class="flex-1 p-3 rounded border" />
+      <input id="search" type="text" placeholder="Masukkan ID iChannel, contoh: ID2512A000" class="flex-1 p-3 rounded border" />
       <button onclick="clearSearch()" class="px-4 py-2 bg-white border rounded">Clear</button>
     </div>
 
@@ -57,7 +57,7 @@
       });
 
     } catch (e) {
-      console.error("Failed to load sheet list", e);
+      console.error("Failed to load database", e);
     }
   }
 
@@ -65,7 +65,7 @@
     try {
       setStatus("Loading data.xlsx...");
       const res = await fetch("https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx");
-      if (!res.ok) throw new Error("File not found. Place data.xlsx in root.");
+      if (!res.ok) throw new Error("Database not found");
 
       const array = await res.arrayBuffer();
       const wb = XLSX.read(array, { type: "array" });
@@ -77,7 +77,7 @@
 
       // Do not show data yet until user enters Login ID
       renderTable([]);
-      setStatus("Google Sheet loaded. Please enter Login ID to display results.");
+      setStatus("Database loaded. Please enter iChannel ID to display results.");
     } catch (e) {
       setStatus("Error: " + e.message);
     }
