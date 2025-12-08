@@ -18,6 +18,7 @@
       </select>
 
       <input id="search" type="text" placeholder="Enter Login ID" class="p-3 border rounded w-2/3" />
+      <button id="searchBtn" class="p-3 bg-blue-600 text-white rounded">Search</button>
     </div>
 
     <!-- Status -->
@@ -39,7 +40,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     loadSheetList();
-    document.getElementById("search").addEventListener("input", filterData);
+    document.getElementById("searchBtn").addEventListener("click", filterData);
     document.getElementById("monthSelect").addEventListener("change", filterByMonth);
   });
 
