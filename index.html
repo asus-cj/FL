@@ -1,23 +1,23 @@
+<!-- Simple HTML + JS version for GitHub Pages: index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Search by Login ID / Month</title>
+  <title>Search Login ID</title>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-5xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">Search Data by Login ID or Month</h1>
+    <h1 class="text-3xl font-bold mb-4">ASUS Frontliner Program</h1>
+    <p class="text-gray-600 mb-4">Silahkan pilih bulan dan masukkan ID iChannel untuk menampilkan data</p>
 
     <div class="flex gap-2 mb-4">
       <select id="monthSelect" class="p-3 rounded border bg-white">
-        <option value="">Select Month (Sheet)</option>
+        <option value="">Pilih bulan</option>
       </select>
-      <input id="search" type="text" placeholder="Search Login ID..."
-        class="flex-1 p-3 rounded border" />
+      <input id="search" type="text" placeholder="Search Login ID..." class="flex-1 p-3 rounded border" />
       <button onclick="clearSearch()" class="px-4 py-2 bg-white border rounded">Clear</button>
     </div>
 
@@ -30,106 +30,138 @@
 
 <script>
   let fullData = [];
+
   let sheetList = [];
 
   document.addEventListener("DOMContentLoaded", () => {
-    loadSheetList();
+    loadSheetList(); // NEW: load all sheet names as month options
+    loadExcel();
     document.getElementById("search").addEventListener("input", filterData);
     document.getElementById("monthSelect").addEventListener("change", filterByMonth);
+  });("DOMContentLoaded", () => {
+    loadExcel();
+    document.getElementById("search").addEventListener("input", filterData);
   });
 
-  async function loadSheetList() {
+  async async function loadSheetList() {
     try {
-      setStatus("Loading sheet list from Google Sheet...");
-      const url = "https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx";
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch sheet — status " + res.status);
+      const metaUrl = "https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx";
+      const res = await fetch(metaUrl);
       const array = await res.arrayBuffer();
       const wb = XLSX.read(array, { type: "array" });
       sheetList = wb.SheetNames;
-      console.log("Available sheets:", sheetList);
+
       const sel = document.getElementById("monthSelect");
       sheetList.forEach(s => {
         sel.innerHTML += `<option value="${s}">${s}</option>`;
       });
-      setStatus("Sheet list loaded. Choose a month or enter Login ID.");
+
     } catch (e) {
-      console.error("Error loading sheet list:", e);
-      setStatus("Error: " + e.message);
+      console.error("Failed to load sheet list", e);
     }
   }
 
-  async function loadExcel(sheetName = null) {
+  async function loadExcel(sheetName = null) {() {
     try {
-      setStatus("Loading sheet data" + (sheetName ? " — " + sheetName : "") + "...");
-      const url = "https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx";
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Fetch failed, status " + res.status);
+      setStatus("Loading data.xlsx...");
+      const res = await fetch("https://docs.google.com/spreadsheets/d/1f-nRX7AbZnnrm3UGEuXQIt4rZKzx1BonAOxaKvDDYSk/export?format=xlsx");
+      if (!res.ok) throw new Error("File not found. Place data.xlsx in root.");
+
       const array = await res.arrayBuffer();
       const wb = XLSX.read(array, { type: "array" });
-      const target = (sheetName && wb.SheetNames.includes(sheetName))
+      const targetSheet = sheetName && wb.SheetNames.includes(sheetName)
         ? sheetName
         : wb.SheetNames[0];
-      const sheet = wb.Sheets[target];
+      const sheet = wb.Sheets[targetSheet];[wb.SheetNames[0]];
       fullData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-    } catch (err) {
-      console.error("Error loading Excel data:", err);
-      fullData = [];
-      setStatus("Error loading data: " + err.message);
+
+      // Do not show data yet until user enters Login ID
+      renderTable([]);
+      setStatus("Google Sheet loaded. Please enter Login ID to display results.");
+    } catch (e) {
+      setStatus("Error: " + e.message);
     }
   }
 
   function filterData() {
     const q = document.getElementById("search").value.trim().toLowerCase();
     const month = document.getElementById("monthSelect").value;
+
     if (month) return filterByMonth();
+
     if (!q) {
       renderTable([]);
-      setStatus("Enter a Login ID to search.");
+      setStatus("Enter Login ID.");
       return;
     }
-    const loginKey = fullData.length
-      ? Object.keys(fullData[0]).find(h => h.toLowerCase() === "login id" || h.toLowerCase() === "loginid")
-      : null;
+
+    const loginKey = Object.keys(fullData[0]).find(h => h.toLowerCase() === "login id" || h.toLowerCase() === "loginid");
     if (!loginKey) {
-      setStatus("Error: No \"Login ID\" column found.");
+      setStatus("Login ID column missing.");
       renderTable([]);
       return;
     }
-    const filtered = fullData.filter(r => (r[loginKey] || "").toString().toLowerCase() === q);
+
+    const filtered = fullData.filter(r => String(r[loginKey]).toLowerCase() === q);
     renderTable(filtered);
-    setStatus(`Showing ${filtered.length} matched result(s).`);
+    setStatus("Showing " + filtered.length + " matched result(s).");
   }
 
   async function filterByMonth() {
     const month = document.getElementById("monthSelect").value;
     if (!month) {
       renderTable([]);
-      setStatus("Select a month (sheet) to display.");
+      setStatus("Select a month to display.");
       return;
     }
+
     await loadExcel(month);
     renderTable(fullData);
-    setStatus(`Loaded sheet: ${month} (${fullData.length} rows).`);
+    setStatus("Loaded sheet: " + month + " (" + fullData.length + " rows)");
+  }() {
+    const q = document.getElementById("search").value.trim().toLowerCase();
+    if (!q) {
+      // If empty input → show nothing
+      renderTable([]);
+      setStatus("Please enter a Login ID.");
+      return;
+    }
+
+    // Identify Login ID column by exact header match (case-insensitive)
+    const loginKey = Object.keys(fullData[0]).find(h => h.toLowerCase() === "login id" || h.toLowerCase() === "loginid");
+
+    if (!loginKey) {
+      setStatus("Error: No Login ID column found.");
+      renderTable([]);
+      return;
+    }
+
+    const filtered = fullData.filter(r => String(r[loginKey]).toLowerCase() === q);
+    renderTable(filtered);
+    setStatus("Showing " + filtered.length + " matched Login ID result(s).");
+  }
+
+  function setStatus(msg) {("Showing " + filtered.length + " of " + fullData.length + " rows.");
   }
 
   function renderTable(rows) {
     const table = document.getElementById("table");
     table.innerHTML = "";
-    if (!rows || rows.length === 0) {
-      table.innerHTML = "<tr><td class='p-4 text-center text-gray-500'>No data to display</td></tr>";
+    if (rows.length === 0) {
+      table.innerHTML = `<tr><td class='p-4 text-center text-gray-500'>No data found</td></tr>`;
       return;
     }
+
     const headers = Object.keys(rows[0]);
-    let thead = "<thead class='bg-gray-200'><tr>";
+    let thead = `<thead class='bg-gray-200'><tr>`;
     headers.forEach(h => thead += `<th class='px-4 py-2 text-left'>${h}</th>`);
-    thead += "</tr></thead>";
+    thead += `</tr></thead>`;
 
     let tbody = "<tbody>";
     rows.forEach(r => {
-      tbody += "<tr class='border-t'>";
+      tbody += `<tr class='border-t'>`;
       headers.forEach(h => tbody += `<td class='px-4 py-2'>${r[h]}</td>`);
-      tbody += "</tr>";
+      tbody += `</tr>`;
     });
     tbody += "</tbody>";
 
@@ -138,9 +170,8 @@
 
   function clearSearch() {
     document.getElementById("search").value = "";
-    document.getElementById("monthSelect").value = "";
-    renderTable([]);
-    setStatus("Enter Login ID or select sheet to display.");
+    renderTable(fullData);
+    setStatus("Showing all " + fullData.length + " rows.");
   }
 
   function setStatus(msg) {
